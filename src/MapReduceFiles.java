@@ -11,27 +11,6 @@ import java.io.BufferedReader;
 import java.util.Scanner;
 
 public class MapReduceFiles {
-
-    //        if (args.length < 3) {
-    //            System.err.println("usage: java MapReduceFiles file1.txt file2.txt file3.txt");
-    //        }
-
-    //        Map<String, String> input = new HashMap<String, String>();
-    //        for (int i = 0; i < numToProcess; i++) {
-    //
-    //        }
-    //        try {
-    //            input.put(args[0], readFile(args[0]));
-    //            input.put(args[1], readFile(args[1]));
-    //            input.put(args[2], readFile(args[2]));
-    //        }
-    //        catch (IOException ex)
-    //        {
-    //            System.err.println("Error reading files...\n" + ex.getMessage());
-    //            ex.printStackTrace();
-    //            System.exit(0);
-    //        }
-
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         Map<String, String> input = new HashMap<String, String>();
@@ -41,10 +20,7 @@ public class MapReduceFiles {
             System.exit(1);
         }
 
-        String[] filePaths = args;  // Get file paths from command-line arguments
-        int numToProcess = filePaths.length;
-
-        System.out.println("Processing " + numToProcess + " files");
+        String[] filePaths = args;  // Get file paths from command line arguments
 
         // Read the provided files
         for (String filePath : filePaths) {
@@ -90,11 +66,7 @@ public class MapReduceFiles {
             // get time elapsed
             long endTime = System.currentTimeMillis();
             duration = endTime - startTime;
-
-            // print duration
             System.out.println("Brute Force Duration: " + duration +"ms");
-            // show me:
-            // System.out.println(output);
         }
 
 
@@ -119,7 +91,6 @@ public class MapReduceFiles {
             long endTime = System.currentTimeMillis();
             duration = endTime - startTime;
 
-            // show me:
             System.out.println("Map Reduce - Mapping Phase Duration: " + duration +"ms");
 
             // GROUP:
@@ -144,7 +115,6 @@ public class MapReduceFiles {
             long endTime2 = System.currentTimeMillis();
             duration2 = endTime2 - startTime2;
 
-            // show me:
             System.out.println("Map Reduce - Group Phase Duration: " + duration2 +"ms");
 
             // REDUCE:
@@ -165,8 +135,6 @@ public class MapReduceFiles {
 
 
             System.out.println("Map Reduce - Reduce Phase Duration: " + duration3 +"ms");
-            // show me:
-            // System.out.println(output);
         }
 
 
@@ -203,7 +171,7 @@ public class MapReduceFiles {
                 try {
                     lines = readFileLines(file);
                 } catch (IOException ex) {
-                    System.err.println("Error reading file " + file + ":\n" + ex.getMessage());
+                    System.out.println("Error reading file " + file);
                     continue;
                 }
                 int totalLines = lines.size();
@@ -231,21 +199,6 @@ public class MapReduceFiles {
                     chunkCount++;
                 }
             }
-
-//            while(inputIter.hasNext()) {
-//                Map.Entry<String, String> entry = inputIter.next();
-//                final String file = entry.getKey();
-//                final String contents = entry.getValue();
-//
-//                Thread t = new Thread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        map(file, contents, mapCallback);
-//                    }
-//                });
-//                mapCluster.add(t);
-//                t.start();
-//            }
 
             // wait for mapping phase to be over:
             for(Thread t : mapCluster) {
@@ -283,8 +236,6 @@ public class MapReduceFiles {
 
             long endTime2 = System.currentTimeMillis();
             duration2 = endTime2 - startTime2;
-
-            // show me:
             System.out.println("Distributed Map Reduce - Grouping Phase Duration: " + duration2 +"ms");
 
             // REDUCE:
@@ -302,35 +253,30 @@ public class MapReduceFiles {
             List<Thread> reduceCluster = new ArrayList<>();
 
 
-            System.out.print("Enter number of words per thread (min 1000, max 10000): ");
+            System.out.print("Enter number of words per thread (min 100, max 1000): ");
             int wordsPerThread = scanner.nextInt();
             scanner.nextLine();
-            if(wordsPerThread < 1000) {
-                System.out.print("Invalid number must be (min 1000, max 10000)");
+            if(wordsPerThread < 100) {
+                System.out.print("Invalid number must be (min 100, max 1000)");
                 System.exit(1);
             }
-            if (wordsPerThread > 10000) {
-                System.out.print("Invalid number must be (min 1000, max 10000)");
+            if (wordsPerThread > 1000) {
+                System.out.print("Invalid number must be (min 100, max 1000)");
                 System.exit(1);
             }
 
             int totalEntries = entries.size();
             int index = 0;
             while (index < totalEntries) {
-                // Tentatively set the chunk end to either the maximum allowed or the total size.
                 int chunkEnd = Math.min(index + wordsPerThread, totalEntries);
-                // If this is not the first chunk and the remaining words are less than the minimum (100),
-                // then combine them with the previous chunk.
                 if (chunkEnd - index < 100 && index != 0) {
                     chunkEnd = totalEntries;
                 }
-                // Create a sublist (chunk) for this thread.
                 List<Map.Entry<String, List<String>>> subEntries = entries.subList(index, chunkEnd);
 
                 Thread t = new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        // For each word in this chunk, call reduce
                         for (Map.Entry<String, List<String>> entry : subEntries) {
                             reduce(entry.getKey(), entry.getValue(), reduceCallback);
                         }
@@ -341,25 +287,6 @@ public class MapReduceFiles {
 
                 index = chunkEnd;
             }
-
-
-//            List<Thread> reduceCluster = new ArrayList<Thread>(groupedItems.size());
-
-//            Iterator<Map.Entry<String, List<String>>> groupedIter = groupedItems.entrySet().iterator();
-//            while(groupedIter.hasNext()) {
-//                Map.Entry<String, List<String>> entry = groupedIter.next();
-//                final String word = entry.getKey();
-//                final List<String> list = entry.getValue();
-//
-//                Thread t = new Thread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        reduce(word, list, reduceCallback);
-//                    }
-//                });
-//                reduceCluster.add(t);
-//                t.start();
-//            }
 
             // wait for reducing phase to be over:
             for(Thread t : reduceCluster) {
@@ -372,11 +299,8 @@ public class MapReduceFiles {
 
             long endTime3 = System.currentTimeMillis();
             duration3 = endTime3 - startTime3;
-
-            // show me:
             System.out.println("Distributed MapReduce Reduce Duration: " + duration3 +"ms");
 
-//            System.out.println(output);
         }
     }
 
@@ -384,7 +308,9 @@ public class MapReduceFiles {
     public static void map(String file, String contents, List<MappedItem> mappedItems) {
         String[] words = contents.trim().split("\\s+");
         for(String word: words) {
-            mappedItems.add(new MappedItem(word, file));
+            // Change the word to its pure form
+            String pureWord = word.replaceAll("[^a-zA-Z]", "");
+            mappedItems.add(new MappedItem(pureWord, file));
         }
     }
 
@@ -402,7 +328,6 @@ public class MapReduceFiles {
     }
 
     public static interface MapCallback<E, V> {
-
         public void mapDone(E key, List<V> values);
     }
 
@@ -515,5 +440,4 @@ public class MapReduceFiles {
             scanner.close();
         }
     }
-
 }
